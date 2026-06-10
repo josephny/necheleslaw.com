@@ -14,10 +14,40 @@ Recent site commits:
 - `ab5a0e8` - Fix static contact form fallback
 - `b3a5b97` - Obfuscate public attorney email addresses
 - `c14128d` - Use image-rendered attorney email addresses
+- `462cb3b` - Submit contact form to backend endpoint
+- `c3a830c` - Submit contact form through Cloudflare Worker
+- `2ec2a95` - Add Cloudflare Worker contact source
 
-## Contact form backend
+## Contact form
 
-Created a dedicated local backend:
+Current design:
+
+- The public form posts to `/contact-submit` on the same hostname.
+- Cloudflare Worker: `necheleslaw-contact`
+- Worker routes:
+  - `necheleslaw.com/contact-submit`
+  - `www.necheleslaw.com/contact-submit`
+- Worker source kept in repo: `/root/necheleslaw-static-site/cloudflare/contact-worker`
+- Deployment working directory used on 2026-06-10: `/root/necheleslaw-contact-worker`
+- Secrets stored in Cloudflare Worker secrets, not in public HTML:
+  - `RESEND_API_KEY`
+  - `CONTACT_TO`
+- Public Worker vars:
+  - `ALLOWED_ORIGINS=https://necheleslaw.com,https://www.necheleslaw.com`
+  - `CONTACT_FROM=Necheles Law Website <contact@necheleslaw.com>`
+- Subject configured as exactly: `NECHELESLAW.COM WEBSITE INQUIRY`
+
+Verified on 2026-06-10:
+
+- `wrangler deploy --dry-run` passed.
+- Worker deployed as version `d1cb496d-9a93-4020-9b3b-6059410ebe04`.
+- `POST https://necheleslaw.com/contact-submit` returned `{"ok":true}`.
+- `POST https://www.necheleslaw.com/contact-submit` returned `{"ok":true}`.
+- Live `https://necheleslaw.com/contact/` contains `/contact-submit`.
+- Live page no longer contains `mailto`, `email program`, or the old tunnel endpoint.
+- Bad origins are rejected.
+
+Earlier local backend, now retired:
 
 - Directory: `/root/necheleslaw-contact`
 - Service: `necheleslaw-contact.service`
@@ -27,7 +57,7 @@ Created a dedicated local backend:
 - Email provider: Resend
 - Sender configured as: `Necheles Law Website <contact@necheleslaw.com>`
 - Recipients configured as: `srn@necheleslaw.com,gstern@necheleslaw.com`
-- Subject configured as exactly: `NECHELESLAW.COM WEBSITE INQUIRY`
+- Status on 2026-06-10: `necheleslaw-contact.service` is inactive and disabled.
 
 Verified:
 
@@ -37,33 +67,21 @@ Verified:
 - After Resend verification, a controlled backend test to the real recipients returned `{"ok": true}`.
 - User confirmed the test email was received.
 
-## Cloudflare tunnel
+## Cloudflare tunnel cleanup
 
-Created a dedicated tunnel for the `.com` contact backend:
+The tunnel approach was abandoned in favor of the Cloudflare Worker. Do not use
+`nycequities.net` or any other unrelated domain for `necheleslaw.com`.
+
+Removed/disabled on 2026-06-10:
 
 - Tunnel name: `necheleslaw-com-contact`
 - Tunnel ID: `610760cb-b4bf-45bc-a86b-63ff5d448d81`
 - Tunnel config: `/root/necheleslaw-contact/cloudflared.yml`
 - Tunnel service: `necheleslaw-com-contact-tunnel.service`
-- Intended hostname: `contact.necheleslaw.com`
-- Current services checked active on 2026-06-09:
-  - `necheleslaw-contact.service`
-  - `necheleslaw-com-contact-tunnel.service`
-
-Important caution:
-
-- During routing, `cloudflared tunnel route dns necheleslaw-com-contact contact.necheleslaw.com` reported that it added `contact.necheleslaw.com.nycequities.net` to the existing `compliance` tunnel, because the local Cloudflare certificate appears tied to the `nycequities.net` zone.
-- The dedicated `.com` tunnel service itself is running, but future work should verify and clean up any accidental `contact.necheleslaw.com.nycequities.net` route if it exists.
-
-## Current public contact page state
-
-Important:
-
-- The public static contact page has not yet been fully rewired to post to the backend endpoint.
-- Current contact page file: `/root/necheleslaw-static-site/contact/index.html`
-- It still uses a JavaScript `mailto:` fallback that dynamically builds the recipient addresses at runtime.
-- The raw lawyer email addresses are not embedded in page source, but a browser executing the script can still construct a mailto link.
-- To complete the real contact-form implementation, change the public form script to `fetch()` the backend endpoint after confirming `https://contact.necheleslaw.com/contact` is publicly reachable with a valid certificate and correct CORS behavior.
+- Status on 2026-06-10:
+  - `necheleslaw-com-contact-tunnel.service` is inactive and disabled.
+  - `cloudflared tunnel list` no longer shows `necheleslaw-com-contact`.
+  - `necheleslaw.com` contact form does not use a tunnel.
 
 ## Email-address scraping reduction
 
@@ -87,9 +105,6 @@ Verified:
 ## Files most likely to matter next
 
 - `/root/necheleslaw-static-site/contact/index.html`
-- `/root/necheleslaw-contact/contact_server.py`
-- `/root/necheleslaw-contact/.env`
-- `/root/necheleslaw-contact/cloudflared.yml`
-- `/etc/systemd/system/necheleslaw-contact.service`
-- `/etc/systemd/system/necheleslaw-com-contact-tunnel.service`
-
+- `/root/necheleslaw-static-site/cloudflare/contact-worker/src/index.js`
+- `/root/necheleslaw-static-site/cloudflare/contact-worker/wrangler.toml`
+- `/root/necheleslaw-static-site/cloudflare/contact-worker/README.md`
