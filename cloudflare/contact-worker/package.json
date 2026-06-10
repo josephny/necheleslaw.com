@@ -1,0 +1,13 @@
+{
+  "name": "necheleslaw-contact-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "check": "wrangler deploy --dry-run"
+  },
+  "devDependencies": {
+    "wrangler": "^3.114.17"
+  }
+}
