@@ -205,7 +205,7 @@ Attorney Advertising | Legal Notice | Credits</p>
   if (error) error.style.display = 'none';
   form.classList.remove('fusion-form', 'fusion-form-62');
   form.removeAttribute('data-config');
-  var submit = form.querySelector('button[type="submit"], button.form-form-submit');
+  var submit = form.querySelector('button[type="button"], button[type="submit"], button.form-form-submit');
   if (submit) {
     submit.type = 'button';
     submit.classList.remove('form-form-submit');
