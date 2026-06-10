@@ -203,6 +203,14 @@ Attorney Advertising | Legal Notice | Credits</p>
   var error = document.querySelector('.fusion-form-response-error');
   if (success) success.style.display = 'none';
   if (error) error.style.display = 'none';
+  form.classList.remove('fusion-form', 'fusion-form-62');
+  form.removeAttribute('data-config');
+  var submit = form.querySelector('button[type="submit"], button.form-form-submit');
+  if (submit) {
+    submit.type = 'button';
+    submit.classList.remove('form-form-submit');
+    submit.removeAttribute('data-form-number');
+  }
 
   function value(name) {
     var field = form.querySelector('[name="' + name + '"]');
@@ -216,10 +224,12 @@ Attorney Advertising | Legal Notice | Credits</p>
     node.style.display = 'block';
   }
 
-  form.addEventListener('submit', function (event) {
-    event.preventDefault();
-    event.stopPropagation();
-    if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+  function handleContactSubmit(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+    }
 
     var requiredMissing = ['first_name', 'email_address', 'message'].some(function (name) {
       return !value(name);
@@ -234,7 +244,6 @@ Attorney Advertising | Legal Notice | Credits</p>
     if (success) success.style.display = 'none';
     if (error) error.style.display = 'none';
 
-    var submit = form.querySelector('button[type="submit"]');
     if (submit) submit.disabled = true;
 
     var payload = new URLSearchParams();
@@ -260,7 +269,10 @@ Attorney Advertising | Legal Notice | Credits</p>
     }).finally(function () {
       if (submit) submit.disabled = false;
     });
-  }, true);
+  }
+
+  if (submit) submit.addEventListener('click', handleContactSubmit, true);
+  form.addEventListener('submit', handleContactSubmit, true);
 })();
 </script>
 </body>
